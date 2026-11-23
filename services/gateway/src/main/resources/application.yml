@@ -1,8 +1,8 @@
 # =============================================================================
 # IntiFix API Gateway
 #
-# Punto de entrada único. Hoy todo va al monolito (intifix-2026) y al panel
-# Django. Patrón strangler fig: cuando extraigas un microservicio, agrega su
+# Punto de entrada único. Rutas actuales: chat-notif-service (chat,
+# notificaciones y WebSocket), panel Django y, todo lo demás, el monolito. Patrón strangler fig: cuando extraigas un microservicio, agrega su
 # ruta ARRIBA de "monolith" con un Path más específico, por ejemplo:
 #
 #   - id: chat-notif-service
@@ -59,11 +59,22 @@ spring:
                 redis-rate-limiter.replenishRate: 10
                 redis-rate-limiter.burstCapacity: 20
 
-        # --- WebSocket del chat (STOMP) --------------------------------------
-        - id: monolith-ws
-          uri: ${MONOLITH_WS_URL:ws://localhost:8080}
+        # --- chat-notif-service (primer microservicio extraído) --------------
+        - id: chat-notif-ws
+          uri: ${CHAT_NOTIF_WS_URL:ws://localhost:8091}
           predicates:
             - Path=/ws/**
+
+        - id: chat-notif
+          uri: ${CHAT_NOTIF_URL:http://localhost:8091}
+          predicates:
+            - Path=/api/v1/chat/**,/api/v1/notifications/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipKeyResolver}"
+                redis-rate-limiter.replenishRate: 30
+                redis-rate-limiter.burstCapacity: 60
 
         # --- Login/registro: límite más estricto contra fuerza bruta ---------
         - id: monolith-auth

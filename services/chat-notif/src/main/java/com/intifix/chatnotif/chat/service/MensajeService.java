@@ -1,0 +1,35 @@
+package com.intifix.chatnotif.chat.service;
+
+import com.intifix.chatnotif.chat.dto.request.EditarMensajeRequest;
+import com.intifix.chatnotif.chat.dto.request.EnviarMensajeRequest;
+import com.intifix.chatnotif.chat.dto.response.MensajeResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.util.UUID;
+
+public interface MensajeService {
+
+    MensajeResponse enviar(EnviarMensajeRequest request);
+
+    MensajeResponse editar(UUID idMensaje, EditarMensajeRequest request);
+
+    void eliminar(UUID idMensaje);
+
+    Page<MensajeResponse> historial(UUID idConversacion, Pageable pageable);
+
+    /**
+     * Marca como leídos los mensajes recibidos por el usuario actual en la
+     * conversación y resetea su contador de no leídos. Devuelve cuántos marcó.
+     */
+    long marcarLeida(UUID idConversacion);
+
+    /**
+     * Marca como ENTREGADOS (RECIBIDO) los mensajes que el usuario actual recibió
+     * en la conversación y que aún estaban en ENVIADO. No toca el documento de
+     * conversación (sin riesgo de optimistic locking). Devuelve cuántos marcó.
+     */
+    long marcarRecibida(UUID idConversacion);
+
+    long contarNoLeidos(UUID idConversacion);
+}

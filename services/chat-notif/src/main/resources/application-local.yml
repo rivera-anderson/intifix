@@ -1,0 +1,9 @@
+# Perfil local: SPRING_PROFILES_ACTIVE=local
+# MongoDB: define MONGO_URI (local) o las DB_MONGO_* (Atlas) en el .env.
+springdoc:
+  api-docs:
+    enabled: true
+
+server:
+  error:
+    include-message: always

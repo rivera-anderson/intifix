@@ -12,6 +12,12 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ROOT\service
 Write-Host " [2/4] Admin Django         :8000  (panel admin backend)"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ROOT\services\admin-django'; venv\Scripts\python.exe manage.py runserver 0.0.0.0:8000 --settings=intifix_admin.settings.development" -WindowStyle Normal
 
+Write-Host " [+] Gateway              :8090"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ROOT\services\gateway'; .\mvnw.cmd spring-boot:run" -WindowStyle Normal
+
+Write-Host " [+] chat-notif-service   :8091  (necesita RabbitMQ: docker run -d -p 5672:5672 rabbitmq:3-management)"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ROOT\services\chat-notif'; .\mvnw.cmd spring-boot:run" -WindowStyle Normal
+
 Write-Host " [3/4] intifix-web          :5173"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ROOT\apps\web'; npm run dev" -WindowStyle Normal
 
@@ -24,7 +30,7 @@ Write-Host ""
 Write-Host " URLs:"
 Write-Host "   http://localhost:5173   <-- app cliente/tecnico"
 Write-Host "   http://localhost:5174   <-- panel admin (frontend)"
-Write-Host "   http://localhost:8080   <-- API backend (Spring)"
+Write-Host "   http://localhost:8090   <-- API gateway (entrada unica)"
 Write-Host "   http://localhost:8000   <-- API admin backend (Django)"
 Write-Host ""
 Write-Host " Cierra las 4 ventanas de PowerShell para parar todo."

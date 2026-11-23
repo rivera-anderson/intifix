@@ -13,6 +13,12 @@ start "IntiFix Backend :8080" cmd /k "cd /d %ROOT%services\monolith && mvnw.cmd 
 echo  [2/4] Admin Django         :8000  (panel admin backend)
 start "IntiFix Admin Django :8000" cmd /k "cd /d %ROOT%services\admin-django && venv\Scripts\python.exe manage.py runserver 0.0.0.0:8000 --settings=intifix_admin.settings.development"
 
+echo  [+] Gateway              :8090
+start "IntiFix Gateway :8090" cmd /k "cd /d %ROOT%services\gateway && mvnw.cmd spring-boot:run"
+
+echo  [+] chat-notif-service   :8091  (necesita RabbitMQ: docker run -d -p 5672:5672 rabbitmq:3-management)
+start "IntiFix chat-notif :8091" cmd /k "cd /d %ROOT%services\chat-notif && mvnw.cmd spring-boot:run"
+
 echo  [3/4] intifix-web          :5173
 start "IntiFix Web :5173" cmd /k "cd /d %ROOT%apps\web && npm run dev"
 
@@ -25,7 +31,7 @@ echo.
 echo  URLs:
 echo    http://localhost:5173   ^<-- app cliente/tecnico
 echo    http://localhost:5174   ^<-- panel admin (frontend)
-echo    http://localhost:8080   ^<-- API backend (Spring)
+echo    http://localhost:8090   ^<-- API gateway (entrada unica)
 echo    http://localhost:8000   ^<-- API admin backend (Django)
 echo.
 echo  Cierra las 4 ventanas de cmd para parar todo.

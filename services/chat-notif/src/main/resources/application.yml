@@ -1,0 +1,81 @@
+# =============================================================================
+# chat-notif-service — chat en tiempo real y notificaciones
+# =============================================================================
+
+server:
+  port: ${PORT:8091}
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+
+spring:
+  application:
+    name: intifix-chat-notif
+
+  data:
+    mongodb:
+      # Base propia del servicio. Por defecto apunta a la MISMA base Mongo que
+      # usaba el monolito, para conservar las conversaciones, mensajes y
+      # notificaciones existentes. Desde ahora esas colecciones son de este
+      # servicio: el monolito ya no las toca. Ver README (migración de datos).
+      uri: ${MONGO_URI:mongodb+srv://${DB_MONGO_USER}:${DB_MONGO_PASSWORD}@${DB_MONGO_HOST}/${DB_MONGO_NAME}?retryWrites=true&w=majority}
+      auto-index-creation: false
+
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      username: ${REDIS_USERNAME:default}
+      password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL:false}
+
+  rabbitmq:
+    # CloudAMQP da una URL amqps://usuario:clave@host/vhost
+    addresses: ${RABBITMQ_URL:amqp://guest:guest@localhost:5672}
+    listener:
+      simple:
+        # 3 intentos y luego dead-letter (nunca reintentos infinitos).
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1s
+          multiplier: 2
+
+intifix:
+  jwt:
+    # El MISMO JWT_SECRET del monolito: este servicio valida sus tokens.
+    secret: ${JWT_SECRET}
+  monolith:
+    url: ${MONOLITH_URL:http://localhost:8080}
+    api-key: ${INTERNAL_API_KEY}
+    estado-cache-ttl: ${ESTADO_CACHE_TTL:30s}
+  cors:
+    allowed-origins:
+      - ${CORS_ORIGIN_1:http://localhost:5173}
+      - ${CORS_ORIGIN_2:http://localhost:5174}
+      - ${CORS_ORIGIN_3:http://localhost:3000}
+
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  health:
+    redis:
+      enabled: false
+    mongo:
+      enabled: false
+    rabbit:
+      enabled: false

@@ -42,7 +42,8 @@ services:
     environment:
       PORT: "8090"
       MONOLITH_URL: http://monolith:8080
-      MONOLITH_WS_URL: ws://monolith:8080
+      CHAT_NOTIF_URL: http://chat-notif:8091
+      CHAT_NOTIF_WS_URL: ws://chat-notif:8091
       ADMIN_URL: http://admin:8000
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT:-6379}
@@ -52,6 +53,8 @@ services:
     depends_on:
       monolith:
         condition: service_healthy
+      chat-notif:
+        condition: service_started
 
   monolith:
     image: ghcr.io/${GHCR_OWNER}/intifix-monolith:${TAG:-latest}
@@ -88,14 +91,71 @@ services:
       CORS_ORIGIN_1: https://${DOMAIN}
       CORS_ORIGIN_2: https://www.${DOMAIN}
       CORS_ORIGIN_3: https://admin.${DOMAIN}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
     volumes:
       - monolith_uploads:/app/uploads
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 5s
       retries: 5
       start_period: 120s
+
+  # ---------------------------------------------------------------------------
+  # chat-notif-service: chat en tiempo real + notificaciones (microservicio)
+  # ---------------------------------------------------------------------------
+  chat-notif:
+    image: ghcr.io/${GHCR_OWNER}/intifix-chat-notif:${TAG:-latest}
+    build:
+      context: ../services/chat-notif
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      PORT: "8091"
+      DB_MONGO_HOST: ${DB_MONGO_HOST}
+      DB_MONGO_NAME: ${CHAT_MONGO_DB_NAME}
+      DB_MONGO_USER: ${DB_MONGO_USER}
+      DB_MONGO_PASSWORD: ${DB_MONGO_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_USERNAME: ${REDIS_USERNAME:-default}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_SSL: ${REDIS_SSL:-true}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      MONOLITH_URL: http://monolith:8080
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      CORS_ORIGIN_1: https://${DOMAIN}
+      CORS_ORIGIN_2: https://www.${DOMAIN}
+      CORS_ORIGIN_3: https://admin.${DOMAIN}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # RabbitMQ: eventos entre servicios. Solo red interna, sin puertos públicos.
+  # Para usar CloudAMQP en su lugar, pon su URL en RABBITMQ_URL y quita este
+  # servicio y los depends_on que lo mencionan.
+  # ---------------------------------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:3.13-alpine
+    restart: unless-stopped
+    mem_limit: 384m
+    environment:
+      RABBITMQ_DEFAULT_USER: intifix
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   admin:
     image: ghcr.io/${GHCR_OWNER}/intifix-admin-django:${TAG:-latest}
@@ -122,7 +182,7 @@ services:
       SERVICES_SERVICE_URL: http://monolith:8080
       PAYMENTS_SERVICE_URL: http://monolith:8080
       GEO_SERVICE_URL: http://monolith:8080
-      CHAT_SERVICE_URL: http://monolith:8080
+      CHAT_SERVICE_URL: http://chat-notif:8091
       SERVICE_API_KEY: ${SERVICE_API_KEY}
       LOG_JSON: "True"
     depends_on:
@@ -133,3 +193,4 @@ volumes:
   caddy_data:
   caddy_config:
   monolith_uploads:
+  rabbitmq_data:

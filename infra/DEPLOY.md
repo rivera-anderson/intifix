@@ -5,9 +5,10 @@ Cómo queda en producción:
 ```
 intifix.com, www.intifix.com  →  Vercel  (apps/web)
 admin.intifix.com             →  Vercel  (apps/admin)
-api.intifix.com               →  VPS → Caddy (HTTPS) → gateway → monolito
+api.intifix.com               →  VPS → Caddy (HTTPS) → gateway → monolito / chat-notif-service
 admin-api.intifix.com         →  VPS → Caddy (HTTPS) → gateway → Django
 Bases de datos                →  Aiven/Neon (Postgres), MongoDB Atlas, Upstash (Redis)
+Eventos entre servicios       →  RabbitMQ (contenedor interno del VPS, o CloudAMQP)
 ```
 
 Si al final usas otro dominio (por ejemplo `intifix.pe`), cámbialo en `DOMAIN` del `.env` y en las variables de Vercel. Nada más está escrito a mano.
@@ -20,7 +21,7 @@ Recomendado: maneja el DNS en **Cloudflare** aunque compres el dominio en otro l
 
 ## 2. Crear el VPS
 
-Cualquier proveedor sirve (Oracle Cloud free ARM, Hetzner, DigitalOcean con créditos del Student Pack). Mínimo **2 GB de RAM**, ideal 4 GB: corren dos JVM (gateway y monolito) y Django. Sistema: **Ubuntu 24.04**. Al crearlo, agrega tu clave SSH pública.
+Cualquier proveedor sirve (Oracle Cloud free ARM, Hetzner, DigitalOcean con créditos del Student Pack). Mínimo **4 GB de RAM**: corren tres JVM (gateway, monolito y chat-notif), Django y RabbitMQ. Cada microservicio nuevo suma unos 400-500 MB. Sistema: **Ubuntu 24.04**. Al crearlo, agrega tu clave SSH pública.
 
 Luego, desde tu PC:
 
@@ -52,7 +53,7 @@ Deja el proxy de Cloudflare apagado hasta que Caddy saque los certificados. Desp
 su - deploy
 cd /opt/intifix/infra
 cp .env.example .env
-nano .env        # llena todo: BD, Redis, JWT_SECRET, Cloudinary, etc.
+nano .env        # llena todo: BD, Redis, JWT_SECRET, RABBITMQ_PASSWORD, INTERNAL_API_KEY, Cloudinary, etc.
 ```
 
 Las imágenes de GHCR se crean la primera vez que corre el workflow **Deploy** (paso 5). Si todavía no existen, construye en el VPS:
