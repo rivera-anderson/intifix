@@ -1,0 +1,63 @@
+# =============================================================================
+# ai-service — asistente de IA (Spring AI + GPT-4o)
+# =============================================================================
+
+server:
+  port: ${PORT:8092}
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+
+spring:
+  application:
+    name: intifix-ai
+
+  data:
+    mongodb:
+      # Memoria de conversaciones (colección ai_conversaciones). Por defecto la
+      # misma base Mongo que usaba el monolito; desde ahora la colección es solo
+      # de este servicio.
+      uri: ${MONGO_URI:mongodb+srv://${DB_MONGO_USER}:${DB_MONGO_PASSWORD}@${DB_MONGO_HOST}/${DB_MONGO_NAME}?retryWrites=true&w=majority}
+      auto-index-creation: true
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: ${OPENAI_MODEL:gpt-4o}
+          temperature: 0.3
+
+intifix:
+  jwt:
+    # El MISMO JWT_SECRET del monolito: este servicio valida sus tokens.
+    secret: ${JWT_SECRET}
+  monolith:
+    url: ${MONOLITH_URL:http://localhost:8080}
+    api-key: ${INTERNAL_API_KEY}
+    estado-cache-ttl: ${ESTADO_CACHE_TTL:30s}
+  cors:
+    allowed-origins:
+      - ${CORS_ORIGIN_1:http://localhost:5173}
+      - ${CORS_ORIGIN_2:http://localhost:5174}
+      - ${CORS_ORIGIN_3:http://localhost:3000}
+
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  health:
+    mongo:
+      enabled: false

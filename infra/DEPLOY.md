@@ -5,7 +5,7 @@ Cómo queda en producción:
 ```
 intifix.com, www.intifix.com  →  Vercel  (apps/web)
 admin.intifix.com             →  Vercel  (apps/admin)
-api.intifix.com               →  VPS → Caddy (HTTPS) → gateway → monolito / chat-notif-service
+api.intifix.com               →  VPS → Caddy (HTTPS) → gateway → monolito / chat-notif / ai
 admin-api.intifix.com         →  VPS → Caddy (HTTPS) → gateway → Django
 Bases de datos                →  Aiven/Neon (Postgres), MongoDB Atlas, Upstash (Redis)
 Eventos entre servicios       →  RabbitMQ (contenedor interno del VPS, o CloudAMQP)
@@ -21,7 +21,7 @@ Recomendado: maneja el DNS en **Cloudflare** aunque compres el dominio en otro l
 
 ## 2. Crear el VPS
 
-Cualquier proveedor sirve (Oracle Cloud free ARM, Hetzner, DigitalOcean con créditos del Student Pack). Mínimo **4 GB de RAM**: corren tres JVM (gateway, monolito y chat-notif), Django y RabbitMQ. Cada microservicio nuevo suma unos 400-500 MB. Sistema: **Ubuntu 24.04**. Al crearlo, agrega tu clave SSH pública.
+Cualquier proveedor sirve (Oracle Cloud free ARM, Hetzner, DigitalOcean con créditos del Student Pack). Mínimo **4 GB de RAM**: corren cuatro JVM (gateway, monolito, chat-notif y ai), Django y RabbitMQ. Cada microservicio nuevo suma unos 400-500 MB. Sistema: **Ubuntu 24.04**. Al crearlo, agrega tu clave SSH pública.
 
 Luego, desde tu PC:
 

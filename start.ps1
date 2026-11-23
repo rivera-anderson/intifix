@@ -18,6 +18,9 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ROOT\service
 Write-Host " [+] chat-notif-service   :8091  (necesita RabbitMQ: docker run -d -p 5672:5672 rabbitmq:3-management)"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ROOT\services\chat-notif'; .\mvnw.cmd spring-boot:run" -WindowStyle Normal
 
+Write-Host " [+] ai-service           :8092"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ROOT\services\ai'; .\mvnw.cmd spring-boot:run" -WindowStyle Normal
+
 Write-Host " [3/4] intifix-web          :5173"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ROOT\apps\web'; npm run dev" -WindowStyle Normal
 

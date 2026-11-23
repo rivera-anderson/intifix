@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [gateway, monolith, chat-notif, admin-django]
+        service: [gateway, monolith, chat-notif, ai, admin-django]
     steps:
       - uses: actions/checkout@v4
         with:

@@ -1,0 +1,8 @@
+# Perfil local: SPRING_PROFILES_ACTIVE=local
+springdoc:
+  api-docs:
+    enabled: true
+
+server:
+  error:
+    include-message: always

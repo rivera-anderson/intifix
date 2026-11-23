@@ -44,6 +44,7 @@ services:
       MONOLITH_URL: http://monolith:8080
       CHAT_NOTIF_URL: http://chat-notif:8091
       CHAT_NOTIF_WS_URL: ws://chat-notif:8091
+      AI_URL: http://ai:8092
       ADMIN_URL: http://admin:8000
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT:-6379}
@@ -54,6 +55,8 @@ services:
       monolith:
         condition: service_healthy
       chat-notif:
+        condition: service_started
+      ai:
         condition: service_started
 
   monolith:
@@ -80,7 +83,6 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       REDIS_SSL: ${REDIS_SSL:-true}
       JWT_SECRET: ${JWT_SECRET}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
       cloudinary_cloud_name: ${CLOUDINARY_CLOUD_NAME:-}
       cloudinary_api_key: ${CLOUDINARY_API_KEY:-}
       cloudinary_api_secret: ${CLOUDINARY_API_SECRET:-}
@@ -135,6 +137,29 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # ai-service: asistente con GPT-4o (microservicio)
+  # ---------------------------------------------------------------------------
+  ai:
+    image: ghcr.io/${GHCR_OWNER}/intifix-ai:${TAG:-latest}
+    build:
+      context: ../services/ai
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      PORT: "8092"
+      DB_MONGO_HOST: ${DB_MONGO_HOST}
+      DB_MONGO_NAME: ${AI_MONGO_DB_NAME}
+      DB_MONGO_USER: ${DB_MONGO_USER}
+      DB_MONGO_PASSWORD: ${DB_MONGO_PASSWORD}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      MONOLITH_URL: http://monolith:8080
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      CORS_ORIGIN_1: https://${DOMAIN}
+      CORS_ORIGIN_2: https://www.${DOMAIN}
+      CORS_ORIGIN_3: https://admin.${DOMAIN}
 
   # ---------------------------------------------------------------------------
   # RabbitMQ: eventos entre servicios. Solo red interna, sin puertos públicos.

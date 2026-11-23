@@ -34,12 +34,19 @@ Reglas:
 
 ## API interna (síncrona)
 
-Además de los eventos, chat-notif consulta al monolito por HTTP. Estas rutas **no pasan por el gateway** (solo red interna de Docker) y exigen la cabecera `X-Internal-Api-Key` = `INTERNAL_API_KEY`.
+Además de los eventos, los microservicios consultan al monolito por HTTP. Estas rutas **no pasan por el gateway** (solo red interna de Docker) y exigen la cabecera `X-Internal-Api-Key` = `INTERNAL_API_KEY`.
 
 | Método y ruta | Respuesta |
 |---|---|
 | `GET /internal/v1/usuarios/{id}/estado` | `{ "existe": bool, "activo": bool }` |
 | `GET /internal/v1/servicios/{id}/participantes` | `{ "idServicio", "idCliente", "idTecnico" }` o 404 |
+| `GET /internal/v1/catalogo/categorias` | `["Refrigeradoras", ...]` (solo con técnicos aprobados) |
+| `GET /internal/v1/catalogo/tecnicos?categoria=` | Técnicos aprobados de la especialidad más parecida, con reputación y `urlPerfil` |
+| `GET /internal/v1/catalogo/servicios?titulo=` | Hasta 10 servicios cuyo título coincide |
+| `GET /internal/v1/clientes/{id}` | Datos del cliente o 404 |
+| `GET /internal/v1/clientes/{id}/servicios` | Hasta 10 servicios recientes del cliente |
+
+Quién llama a qué: chat-notif usa `usuarios/estado` y `servicios/participantes`; ai-service usa `usuarios/estado`, `catalogo/*` y `clientes/*`. ai-service no publica ni consume eventos.
 
 ## Pendiente
 

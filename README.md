@@ -11,6 +11,7 @@ intifix/
 ├── services/
 │   ├── gateway/        API gateway (Spring Cloud Gateway) — entrada única
 │   ├── chat-notif/     Microservicio de chat en tiempo real y notificaciones
+│   ├── ai/             Microservicio del asistente de IA (Spring AI + GPT-4o)
 │   ├── monolith/       Backend principal (Spring Boot) — submódulo intifix-2026
 │   └── admin-django/   API del panel admin (Django + DRF)
 ├── packages/           Código compartido entre frontends (próximamente)
@@ -33,7 +34,7 @@ npm install          # instala los frontends (workspaces)
 npm run dev          # web en :5173 y admin en :5174
 ```
 
-En Windows, `start.bat` levanta todo: monolito (:8080), gateway (:8090), chat-notif (:8091), Django (:8000) y los dos frontends. chat-notif necesita RabbitMQ: `docker run -d --name rabbit -p 5672:5672 -p 15672:15672 rabbitmq:3-management`. Los frontends llaman siempre al gateway.
+En Windows, `start.bat` levanta todo: monolito (:8080), gateway (:8090), chat-notif (:8091), ai (:8092), Django (:8000) y los dos frontends. chat-notif necesita RabbitMQ: `docker run -d --name rabbit -p 5672:5672 -p 15672:15672 rabbitmq:3-management`. Los frontends llaman siempre al gateway.
 
 ## Arquitectura
 
@@ -43,12 +44,13 @@ Todo entra por el **gateway**, que reparte las peticiones. La migración a micro
 |---|---|---|---|
 | gateway | Entrada única, rate limit | Redis | ✅ |
 | chat-notif | Chat en tiempo real y notificaciones | MongoDB, Redis | ✅ extraído |
-| monolith | Auth, usuarios, técnicos, servicios, pagos, IA, auditoría | PostgreSQL, MongoDB | En migración |
+| ai | Asistente: recomienda técnicos y estima presupuestos | MongoDB, OpenAI | ✅ extraído |
+| monolith | Auth, usuarios, técnicos, servicios, pagos, auditoría | PostgreSQL, MongoDB | En migración |
 | admin-django | API del panel admin | PostgreSQL, MongoDB | ✅ |
 
 Los servicios se hablan por **RabbitMQ** (eventos) y por una API interna HTTP. El contrato está en [`docs/eventos.md`](docs/eventos.md).
 
-Siguientes a extraer: ai → pagos → técnicos → servicios → auth.
+Siguientes a extraer: pagos → técnicos → servicios → auth.
 
 ## Despliegue
 

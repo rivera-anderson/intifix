@@ -19,6 +19,9 @@ start "IntiFix Gateway :8090" cmd /k "cd /d %ROOT%services\gateway && mvnw.cmd s
 echo  [+] chat-notif-service   :8091  (necesita RabbitMQ: docker run -d -p 5672:5672 rabbitmq:3-management)
 start "IntiFix chat-notif :8091" cmd /k "cd /d %ROOT%services\chat-notif && mvnw.cmd spring-boot:run"
 
+echo  [+] ai-service           :8092
+start "IntiFix ai-service :8092" cmd /k "cd /d %ROOT%services\ai && mvnw.cmd spring-boot:run"
+
 echo  [3/4] intifix-web          :5173
 start "IntiFix Web :5173" cmd /k "cd /d %ROOT%apps\web && npm run dev"
 
