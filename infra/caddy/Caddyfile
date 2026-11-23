@@ -1,0 +1,18 @@
+# Caddy pide y renueva los certificados HTTPS de Let's Encrypt solo.
+# Requisito: los registros DNS de api.<dominio> y admin-api.<dominio> deben
+# apuntar a la IP del VPS ANTES de levantar Caddy.
+{
+	email {$ACME_EMAIL}
+}
+
+api.{$DOMAIN}, admin-api.{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	# WebSocket incluido: Caddy hace el upgrade automáticamente.
+	reverse_proxy gateway:8090
+}

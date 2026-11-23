@@ -22,3 +22,9 @@ Thumbs.db
 .vscode/
 *.suo
 *.user
+
+# ─── Monorepo ─────────────────────────────────────────────────────────────────
+node_modules/
+.turbo/
+dist/
+target/

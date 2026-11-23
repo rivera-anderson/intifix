@@ -1,0 +1,104 @@
+# =============================================================================
+# IntiFix API Gateway
+#
+# Punto de entrada único. Hoy todo va al monolito (intifix-2026) y al panel
+# Django. Patrón strangler fig: cuando extraigas un microservicio, agrega su
+# ruta ARRIBA de "monolith" con un Path más específico, por ejemplo:
+#
+#   - id: chat-notif-service
+#     uri: ${CHAT_SERVICE_URL:http://localhost:8091}
+#     predicates:
+#       - Path=/api/v1/chat/**,/api/v1/notifications/**
+#
+# y el monolito deja de recibir esas peticiones sin que los frontends cambien.
+# =============================================================================
+
+server:
+  port: ${PORT:8090}
+  # Detrás de Caddy: respetar X-Forwarded-Proto/Host para generar URLs correctas.
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: intifix-gateway
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      username: ${REDIS_USERNAME:default}
+      password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL:false}
+
+  cloud:
+    gateway:
+      httpclient:
+        connect-timeout: 5000
+        # El chat con IA hace streaming (SSE): necesita margen.
+        response-timeout: 120s
+
+      default-filters:
+        # El monolito y Django ya responden CORS; si un día el gateway también
+        # agrega cabeceras, esto evita duplicados que el navegador rechaza.
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+
+      routes:
+        # --- Panel admin (Django) por subdominio: admin-api.<dominio> ---------
+        - id: admin-django
+          uri: ${ADMIN_URL:http://localhost:8000}
+          order: -1
+          predicates:
+            - Host=admin-api.**
+          filters:
+            # Django valida ALLOWED_HOSTS y CSRF con el Host original.
+            - PreserveHostHeader
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+
+        # --- WebSocket del chat (STOMP) --------------------------------------
+        - id: monolith-ws
+          uri: ${MONOLITH_WS_URL:ws://localhost:8080}
+          predicates:
+            - Path=/ws/**
+
+        # --- Login/registro: límite más estricto contra fuerza bruta ---------
+        - id: monolith-auth
+          uri: ${MONOLITH_URL:http://localhost:8080}
+          predicates:
+            - Path=/api/v1/auth/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipKeyResolver}"
+                redis-rate-limiter.replenishRate: 2
+                redis-rate-limiter.burstCapacity: 10
+
+        # --- Todo lo demás: monolito -----------------------------------------
+        - id: monolith
+          uri: ${MONOLITH_URL:http://localhost:8080}
+          predicates:
+            - Path=/api/**,/uploads/**,/swagger-ui/**,/swagger-ui.html,/v3/api-docs/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipKeyResolver}"
+                redis-rate-limiter.replenishRate: 20
+                redis-rate-limiter.burstCapacity: 40
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: ${GATEWAY_LOG_LEVEL:INFO}

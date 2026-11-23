@@ -4,7 +4,7 @@ services:
     name: intifix-backend
     runtime: java
     plan: free                      # cambiar a "starter" ($7/mes) si necesitas uptime 24/7
-    rootDir: intifix-2026
+    rootDir: services/monolith
     buildCommand: mvn -B -DskipTests package
     startCommand: java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -jar target/*.jar
     healthCheckPath: /actuator/health
@@ -74,7 +74,7 @@ services:
     name: intifix-admin
     runtime: python
     plan: free
-    rootDir: admin-django
+    rootDir: services/admin-django
     buildCommand: pip install -r requirements/production.txt && python manage.py collectstatic --noinput
     startCommand: gunicorn intifix_admin.wsgi:application --config gunicorn.conf.py
     healthCheckPath: /health/
